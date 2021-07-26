@@ -1,0 +1,15 @@
+{
+  "name": "chime",
+  "version": "1.0.0",
+  "description": "bot that chimes with the time",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "jane petrovna <jane@j4.pm>",
+  "license": "SEE LICENSE IN LICENSE",
+  "dependencies": {
+    "eris": "^0.15.1",
+    "node-schedule": "^2.0.0"
+  }
+}
