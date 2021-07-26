@@ -10,6 +10,8 @@ const bot = new eris(config.token);
 
 let playing = false;
 
+let channelQueue = {};
+
 bot.on("messageCreate", (message) => {
   // console.log(message.content);
   if (!message.author.bot && message.content === "ct!toggle") {
@@ -41,7 +43,7 @@ bot.on("messageCreate", (message) => {
       new Date().getHours() % (parseInt(config.sound_number) || 12);
     let filePath = getFilePath(currentHour);
     const file = fs.readFileSync(filePath);
-    play(file, listenableChannels[0]);
+    play(file, listenableChannels);
   }
 });
 
@@ -60,15 +62,19 @@ function getFilePath(currentHour) {
   return filePath;
 }
 
-async function play(file, channelID) {
-  while (playing) {}
+async function play(file, channelIDs) {
+  if (!Array.isArray(channelIDs)) {
+    return;
+  }
   const resource = stream.Readable.from(file);
-  let conn = await bot.joinVoiceChannel(channelID);
+  // console.log(`joining channel ${channelIDs[0]} to play`);
+  let conn = await bot.joinVoiceChannel(channelIDs[0]);
   playing = true;
   conn.play(resource);
   conn.on("end", () => {
     playing = false;
-    bot.leaveVoiceChannel(channelID);
+    bot.leaveVoiceChannel(channelIDs[0]);
+    play(file, channelIDs.slice(1, channelIDs.length));
   });
 }
 
@@ -90,10 +96,7 @@ const job = schedule.scheduleJob("0 * * * *", (fireDate) => {
       .filter((state) => !state.deaf && !state.selfDeaf)
       .map((state) => state.channelID)
       .filter((value, index, self) => index === self.indexOf(value));
-    for (let channelID of listenableChannels) {
-      // console.log(`joining channel ${channelID} to play`);
-      await play(file, channelID);
-    }
+    await play(file, listenableChannels);
   });
 });
 
