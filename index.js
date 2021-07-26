@@ -8,6 +8,8 @@ const config = require("./config.json");
 
 const bot = new eris(config.token);
 
+let playing = false;
+
 bot.on("messageCreate", (message) => {
   // console.log(message.content);
   if (!message.author.bot && message.content === "ct!toggle") {
@@ -23,18 +25,31 @@ bot.on("messageCreate", (message) => {
     }
     fs.writeFileSync("./config.json", JSON.stringify(config));
   }
+  if (!message.author.bot && message.content === "ct!ply") {
+    if (!message.member) {
+      return;
+    }
+    let listenableChannels = message.channel.guild.voiceStates
+      .filter((state) => !state.deaf && !state.selfDeaf)
+      .map((state) => state.channelID)
+      .filter((value, index, self) => index === self.indexOf(value));
+    if (!listenableChannels.length) {
+      message.channel.createMessage("idk");
+      return;
+    }
+    let currentHour =
+      new Date().getHours() % (parseInt(config.sound_number) || 12);
+    let filePath = getFilePath(currentHour);
+    const file = fs.readFileSync(filePath);
+    play(file, listenableChannels[0]);
+  }
 });
 
 bot.on("ready", () => {
   console.log("ready");
 });
 
-// set to 0 * * * *
-const job = schedule.scheduleJob("0 * * * *", (fireDate) => {
-  let currentHour =
-    new Date().getHours() % (parseInt(config.sound_number) || 12);
-  console.log(`chimed ${currentHour} times at ${fireDate}.`);
-
+function getFilePath(currentHour) {
   let filePath = files[0];
   if (files.length >= currentHour) {
     filePath =
@@ -42,6 +57,28 @@ const job = schedule.scheduleJob("0 * * * *", (fireDate) => {
   } else {
     console.warn(`could not get filename for hour ${currentHour}`);
   }
+  return filePath;
+}
+
+async function play(file, channelID) {
+  while (playing) {}
+  const resource = stream.Readable.from(file);
+  let conn = await bot.joinVoiceChannel(channelID);
+  playing = true;
+  conn.play(resource);
+  conn.on("end", () => {
+    playing = false;
+    bot.leaveVoiceChannel(channelID);
+  });
+}
+
+// set to 0 * * * *
+const job = schedule.scheduleJob("0 * * * *", (fireDate) => {
+  let currentHour =
+    new Date().getHours() % (parseInt(config.sound_number) || 12);
+  console.log(`chimed ${currentHour} times at ${fireDate}.`);
+
+  let filePath = getFilePath(currentHour);
   const file = fs.readFileSync(filePath);
   // console.log(filePath, file);
   config.enabled_guilds.forEach(async (id) => {
@@ -53,18 +90,9 @@ const job = schedule.scheduleJob("0 * * * *", (fireDate) => {
       .filter((state) => !state.deaf && !state.selfDeaf)
       .map((state) => state.channelID)
       .filter((value, index, self) => index === self.indexOf(value));
-    let playing = false;
     for (let channelID of listenableChannels) {
       // console.log(`joining channel ${channelID} to play`);
-      while (playing) {}
-      const resource = stream.Readable.from(file);
-      let conn = await bot.joinVoiceChannel(channelID);
-      playing = true;
-      conn.play(resource);
-      conn.on("end", () => {
-        playing = false;
-        bot.leaveVoiceChannel(channelID);
-      });
+      await play(file, channelID);
     }
   });
 });
