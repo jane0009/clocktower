@@ -64,6 +64,7 @@ function getFilePath(currentHour) {
 
 async function play(file, channelIDs) {
   if (!Array.isArray(channelIDs)) {
+    bot.leaveVoiceChannel(channelIDs[0]);
     return;
   } else if (!channelIDs[0] && channelIDs.length > 1) {
     bot.leaveVoiceChannel(channelIDs[0]);
@@ -76,8 +77,8 @@ async function play(file, channelIDs) {
   conn.play(resource);
   conn.on("end", () => {
     playing = false;
+    bot.leaveVoiceChannel(channelIDs[0]);
     if (channelIDs.length > 1) {
-      bot.leaveVoiceChannel(channelIDs[0]);
       play(file, channelIDs.slice(1, channelIDs.length));
     }
   });
