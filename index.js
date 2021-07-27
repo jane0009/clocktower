@@ -65,6 +65,9 @@ function getFilePath(currentHour) {
 async function play(file, channelIDs) {
   if (!Array.isArray(channelIDs)) {
     return;
+  } else if (!channelIDs[0] && channelIDs.length > 1) {
+    bot.leaveVoiceChannel(channelIDs[0]);
+    play(file, channelIDs.slice(1, channelIDs.length));
   }
   const resource = stream.Readable.from(file);
   // console.log(`joining channel ${channelIDs[0]} to play`);
@@ -73,8 +76,10 @@ async function play(file, channelIDs) {
   conn.play(resource);
   conn.on("end", () => {
     playing = false;
-    bot.leaveVoiceChannel(channelIDs[0]);
-    play(file, channelIDs.slice(1, channelIDs.length));
+    if (channelIDs.length > 1) {
+      bot.leaveVoiceChannel(channelIDs[0]);
+      play(file, channelIDs.slice(1, channelIDs.length));
+    }
   });
 }
 
