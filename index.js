@@ -17,7 +17,6 @@ bot.on("messageCreate", (message) => {
   if (!message.author.bot && message.content === "ct!toggle") {
     let id = message.channel.guild.id;
     if (
-      id === "805978396974514206" &&
       message.author.id !== "123601647258697730" &&
       message.author.id !== "164469624463818752"
     ) {
