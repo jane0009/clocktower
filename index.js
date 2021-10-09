@@ -16,7 +16,13 @@ bot.on("messageCreate", (message) => {
   // console.log(message.content);
   if (!message.author.bot && message.content === "ct!toggle") {
     let id = message.channel.guild.id;
-    if (config.enabled_guilds.includes(id)) {
+    if (
+      id === "805978396974514206" &&
+      message.author.id !== "123601647258697730" &&
+      message.author.id !== "164469624463818752"
+    ) {
+      message.channel.createMessage("https://i.hailsatan.co/i/y11cefrx.png");
+    } else if (config.enabled_guilds.includes(id)) {
       console.log(`disabled for guild ${id}`);
       config.enabled_guilds.splice(config.enabled_guilds.indexOf(id), 1);
       message.channel.createMessage("disabled");
